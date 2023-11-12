@@ -193,19 +193,20 @@ def preset(mod_file, optional_mod=False, server_mod=False):
             ids.append(match.group(1))
             moddir = WORKSHOP + match.group(1)
 
-            if optional_mod:
-                print(f"\n### WORKSHOP: Optional mod: {match.group(1)}.", flush=True)
-                mods.append(moddir) # Required to download the mod to be able to copy the signing keys
-                # keys.copy(moddir) # Wrong place - not downloaded yet
-            elif server_mod:
-                print(f"\n### WORKSHOP: Server mod: {match.group(1)} - SKIPPING KEY.", flush=True)
-                mods.append(moddir)
-                # Do not copy the keys. So clients will not be asked to load the server mod
-            else:
-                # Required mod for server and client
-                # print(f"\n### WORKSHOP: Adding mod to load: {match.group(1)}.", flush=True)
-                mods.append(moddir)
-                # keys.copy(moddir) # Wrong place - not downloaded yet
+            mods.append(moddir)
+            # if optional_mod:
+            #     print(f"\n### WORKSHOP: Optional mod: {match.group(1)}.", flush=True)
+            #     mods.append(moddir) # Required to download the mod to be able to copy the signing keys
+            #     # keys.copy(moddir) # Wrong place - not downloaded yet
+            # elif server_mod:
+            #     print(f"\n### WORKSHOP: Server mod: {match.group(1)} - SKIPPING KEY.", flush=True)
+            #     mods.append(moddir)
+            #     # Do not copy the keys. So clients will not be asked to load the server mod
+            # else:
+            #     # Required mod for server and client
+            #     # print(f"\n### WORKSHOP: Adding mod to load: {match.group(1)}.", flush=True)
+            #     mods.append(moddir)
+            #     # keys.copy(moddir) # Wrong place - not downloaded yet
 
         if(ids):
             download_mods(ids)
@@ -214,6 +215,8 @@ def preset(mod_file, optional_mod=False, server_mod=False):
         if not server_mod:
             for mod_dir in mods:
                 keys.copy(mod_dir)
+        else:
+            print(f"\n### WORKSHOP: Server mod: {match.group(1)} - SKIPPING KEY.", flush=True)
 
     # TODO: Delete presets.html
 
