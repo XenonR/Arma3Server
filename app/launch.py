@@ -110,23 +110,23 @@ def compile_launch_options(params_data):
     return " ".join(cmditems)
 
 
-print("### SYSTEM: Setup user and group", flush=True)
+print("\n### SYSTEM: Setup user and group", flush=True)
 # Set group id
 try:
     group_id_cmd = [ "groupmod", "-g", str(GROUPID), USERNAME ]
     subprocess.call(group_id_cmd)
 except Exception as exception:
-    print(f"###\nERROR: Setting group ID failed: {exception}\n###", flush=True)
+    print(f"\n### ERROR: Setting group ID failed: {exception}\n###", flush=True)
 
 # Set user id
 try:
     user_id_cmd =  [ "usermod", "-u", str(USERID), "-g", str(GROUPID), USERNAME ]
     subprocess.call(user_id_cmd)
 except Exception as exception:
-    print(f"###\nERROR: Setting user ID failed: {exception}\n###", flush=True)
+    print(f"\n### ERROR: Setting user ID failed: {exception}\n###", flush=True)
 
 # Update file permissions
-print("### SYSTEM: Set file permissions", flush=True)
+print("\n### SYSTEM: Set file permissions", flush=True)
 
 permission_targets = [
     os.sep.join([STEAM_INSTALL_DIR,"mpmissions"])
@@ -137,10 +137,10 @@ for target in permission_targets:
         permission_cmd = [ "chmod", "-R", "777", target ]
         subprocess.call(permission_cmd)
     except Exception as exception:
-        print(f"###\nERROR: Setting file permissions for '{target}': {exception}\n###", flush=True)
+        print(f"\n### ERROR: Setting file permissions for '{target}': {exception}\n###", flush=True)
 
 # Update file ownership
-print("### SYSTEM: Set file ownership", flush=True)
+print("\n### SYSTEM: Set file ownership", flush=True)
 
 permission_targets = [
     USER_HOME_DIR,
@@ -155,16 +155,16 @@ for target in permission_targets:
         permission_cmd = [ "chown", "-R", f"{USERID}:{GROUPID}", target ]
         subprocess.call(permission_cmd)
     except Exception as exception:
-        print(f"###\nERROR: Setting file ownership for '{target}': {exception}\n###", flush=True)
+        print(f"\n### ERROR: Setting file ownership for '{target}': {exception}\n###", flush=True)
 
 # Drop root privileges
-print("### SYSTEM: Dropping root privileges", flush=True)
+print("\n### SYSTEM: Dropping root privileges", flush=True)
 os.setgid(int(USERID))
 os.setuid(int(GROUPID))
 
 # Cleanup keys directory
 if os.path.exists(KEYS_DIR):
-    print("### SYSTEM: Deleting signing keys", flush=True)
+    print("\n### SYSTEM: Deleting signing keys", flush=True)
     for item in os.listdir(KEYS_DIR):
         if os.path.isfile(os.path.join(KEYS_DIR,item)):
             if item.lower() not in [
@@ -178,16 +178,19 @@ if os.path.exists(KEYS_DIR):
                 ]:
                 os.remove(os.path.join(KEYS_DIR,item))
 
+
 #######################
 ## Pre-Checks / Overrides
 #######################
 if ARMA_CDLC:
+    print(f" \n### SYSTEM: Creator DLC(s): {ARMA_CDLC}", flush=True)
+    if STEAM_BRANCH.lower() != "creatordlc":
+        print(f"\n### SYSTEM: WARNING: Changing STEAM_BRANCH from \"{STEAM_BRANCH}\" to \"creatordlc\" since ARMA_CDLC is set.\n###", flush=True)
+        STEAM_BRANCH = "creatordlc"
+
     server_params["mod"].extend(ARMA_CDLC.split(";"))
     headless_params["mod"].extend(ARMA_CDLC.split(";"))
-    print(f"### SYSTEM: Creator DLC(s): {ARMA_CDLC}", flush=True)
-    if STEAM_BRANCH.lower() != "creatordlc":
-        print(f"\n###  SYSTEM: WARNING: Changing STEAM_BRANCH from \"{STEAM_BRANCH}\" to \"creatordlc\" since ARMA_CDLC is set.\n###", flush=True)
-        STEAM_BRANCH = "creatordlc"
+
 
 ########################
 ## STEAM
@@ -213,10 +216,9 @@ else:
 
     print("### STEAM: Login data found, commencing with startup", flush=True)
 
-    # Install ArmA
+    # Install/Update/Verify ArmA
     steam_cmd = [STEAMCMD]
     steam_cmd.extend(["+force_install_dir", STEAM_INSTALL_DIR])
-    # steam_cmd.extend(["+login", "anonymous"])
     steam_cmd.extend(["+login", STEAM_USER])
     if STEAM_PASSWORD:
         steam_cmd.extend([STEAM_PASSWORD])
@@ -245,18 +247,14 @@ else:
             print(f"### STEAM: We are throttled. Sleeping for 5 more minutes...", flush=True)
             sleep(300)
 
+
 #######################
 ## ArmA 3 Mods
 #######################
-print()
-
-# TODO: This doesn't seem to work - AND IT SHOULD NOT, it will break Arma3sync Repos
-# print("### SYSTEM: Renaming mod files to lower case", flush=True)
-# subprocess.call(["/bin/bash", "/app/mods.sh"])
 
 # Preset Mods
 if not USE_STEAM:
-    print("### WARNING: Workshop is DISABLED. (USE_STEAM=false)", flush=True)
+    print("\n### WARNING: Workshop is DISABLED. (USE_STEAM=false)", flush=True)
 else:
     if ARMA_MOD_PRESET:
         loaded_preset = workshop.preset(ARMA_MOD_PRESET)
@@ -278,48 +276,12 @@ if ARMA_LOCAL_MODS and os.path.exists("mods"):
 if ARMA_SERVER_LOCAL_MODS and os.path.exists("servermods"):
     server_params["serverMod"].extend(local.mods("servermods"))
 
-#######################
-## Fixup ArmA 3 Launcher Limitations
-#######################
-# print()
-# for addon_path, addon_subdirs, addon_files in os.walk(os.sep.join([STEAM_INSTALL_DIR, workshop.WORKSHOP])):
-#     for fname in addon_files:
-#         if fname.lower() == "meta.cpp":
-#             fname = os.sep.join([addon_path,fname])
-#             print(fname)
-            
-#             try:
-#                 buffer = []
-#                 with open(fname, "r") as file:
-#                     for line in file:
-#                         line = line.strip()
-#                         if line.startswith("name"):
-#                             # Omit name to avoid transfer limit
-#                             buffer.append('name = ".";')
-#                             pass
-#                         elif line.startswith("publishedid"):
-#                            # Always replace publishedid with folder name to ensure it is correct 
-#                            buffer.append(f"publishedid = {addon_path.split(os.sep)[-1]};")
-#                         else:
-#                             buffer.append(line)
-
-#                 buffer = "\n".join(buffer)
-#                 # Write new meta.cpp
-#                 with open(fname, 'w') as file:
-#                     file.write(buffer)
-                
-#                 # Readback new meta.cpp
-#                 with open(fname, "r") as file:
-#                     print(file.read())
-#                     print()
-#             except:
-#                 print("fixup error")
 
 #######################
 ## ArmA 3 Headless
 #######################
 if ARMA_HEADLESS_CLIENTS:
-    print(f"### ARMA: Setting up headless clients: {ARMA_HEADLESS_CLIENTS}", flush=True)
+    print(f"\n### ARMA: Setting up headless clients: {ARMA_HEADLESS_CLIENTS}", flush=True)
     # Read server config to dict
     with open(ARMA_CONFIG_FILE, 'r', encoding='utf-8') as server_config:
         data = server_config.read()
@@ -342,7 +304,7 @@ if ARMA_HEADLESS_CLIENTS:
     for i in range(1, ARMA_HEADLESS_CLIENTS+1):
         tmp_params = headless_params
         tmp_params["name"] = f"{ARMA_PROFILE}-hc-{i}"
-        print(f"### ARMA: Launching ArmA Client {i} with: {ARMA_BINARY} {compile_launch_options(tmp_params)}", flush=True)
+        print(f"\n### ARMA: Launching ArmA Client {i} with: {ARMA_BINARY} {compile_launch_options(tmp_params)}", flush=True)
         task_manager.append(
             subprocess.Popen(os.path.join(STEAM_INSTALL_DIR, ARMA_BINARY) + " " +compile_launch_options(tmp_params), shell=True)
             )
@@ -362,10 +324,10 @@ server_params["cfg"] = f"{STEAM_INSTALL_DIR}/configs/{ARMA_BASIC_CONFIG}"
 
 # Launch ArmA Server
 if DISCORD_TOKEN:
-    print("### DISCORD: Launching Discord bot", flush=True)
+    print("\n### DISCORD: Launching Discord bot", flush=True)
     botprocess = subprocess.Popen(["python3", "/app/bot.py"])
     
-print(f"### ARMA: Launching ArmA Server with: {ARMA_BINARY} {compile_launch_options(server_params)} {ARMA_PARAMS}", flush=True)
+print(f"\n### ARMA: Launching ArmA Server with: {ARMA_BINARY} {compile_launch_options(server_params)} {ARMA_PARAMS}", flush=True)
 timestamp = datetime.now().strftime("%Y%m%d-%H%M")
 logfile = open(f"{STEAM_INSTALL_DIR}/logs/server-{ARMA_PROFILE}-{timestamp}.log", 'w', encoding='utf-8')
 armaprocess = subprocess.Popen(
@@ -381,14 +343,12 @@ try:
     armaprocess.wait()
     logfile.close()
 except KeyboardInterrupt:
-    print("### SYSTEM: Shutting down...", flush=True)
+    print("\n### SYSTEM: Shutting down...", flush=True)
     for target in task_manager:
         print(f" - {target.pid}", flush=True)
     for target in task_manager:
         print(f"    SIGINT client {target.pid}", flush=True)
         target.send_signal(signal.SIGINT)
-        # no need to wait for headless
-        # target.wait(timeout=30)
     print(f"    SIGINT server {armaprocess.pid}", flush=True)
     armaprocess.send_signal(signal.SIGINT)
     armaprocess.wait(timeout=30)

@@ -8,21 +8,11 @@ from itertools import islice
 
 
 WORKSHOP = "steamapps/workshop/content/107410/"
-# WORKSHOP = "mod/"
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"  # noqa: E501
 
 
-# def update_directory_names(dirs,old_dir,new_dir):
-#   for index in range(0,len(dirs)-1):
-#     # if dirs[index].startswith(old_dir):
-#     dirs[index] = dirs[index].replace(old_dir,new_dir)
-
-#   return dirs
-
 def modFilesLower(startdir):
     print(f"\n### WORKSHOP: Checking to rename files...")
-
-    addon_dirs = []
 
     # Files pass
     for addon_path, _, addon_files in os.walk(startdir):
@@ -50,6 +40,7 @@ def modFilesLower(startdir):
 
     # Reverse to traverse from deepest directory backwards
     addon_path_list.reverse()
+
     for addon_path in addon_path_list:
         addon_path_array = addon_path.split(os.sep)
         addon_path_array_lower = addon_path_array.copy()
@@ -165,7 +156,8 @@ def download_mods(ids):
 
         # All downloads finished - Rename files to lower case
         modFilesLower(os.sep.join([os.environ["STEAM_APPDIR"],WORKSHOP]))
-        # All downloads finished - Fix broken Mod-Infos
+
+        # All downloads finished - Fix broken Mod-Infos for Launcher compatibility
         fixMissingModCpp(ids)
         fixMissingMetaCppId(ids)
 
@@ -194,19 +186,6 @@ def preset(mod_file, optional_mod=False, server_mod=False):
             moddir = WORKSHOP + match.group(1)
 
             mods.append(moddir)
-            # if optional_mod:
-            #     print(f"\n### WORKSHOP: Optional mod: {match.group(1)}.", flush=True)
-            #     mods.append(moddir) # Required to download the mod to be able to copy the signing keys
-            #     # keys.copy(moddir) # Wrong place - not downloaded yet
-            # elif server_mod:
-            #     print(f"\n### WORKSHOP: Server mod: {match.group(1)} - SKIPPING KEY.", flush=True)
-            #     mods.append(moddir)
-            #     # Do not copy the keys. So clients will not be asked to load the server mod
-            # else:
-            #     # Required mod for server and client
-            #     # print(f"\n### WORKSHOP: Adding mod to load: {match.group(1)}.", flush=True)
-            #     mods.append(moddir)
-            #     # keys.copy(moddir) # Wrong place - not downloaded yet
 
         if(ids):
             download_mods(ids)

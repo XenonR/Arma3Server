@@ -3,10 +3,7 @@ import shutil
 
 
 def copy(moddir):
-    processed_keys = 0
-
     # Try to find human readable name
-
     try:
         with open(os.path.join(moddir, "meta.cpp"), "r") as file:
             for line in file:
@@ -16,8 +13,6 @@ def copy(moddir):
                     modname = modname[0:modname.index("\"")]
     except:
         modname = moddir
-
-    # print(f"### KEYS: Modname = {modname}")
 
     for addon_path, addon_subdirs, addon_files in os.walk(moddir):
         for fname in addon_files:
@@ -33,5 +28,3 @@ def copy(moddir):
                 print(f"### KEYS: Missing key(s): {moddir}")
         except:
             print(f"### KEYS: Missing key(s)_: {moddir}")
-    # else:
-    #     print(f"### KEYS: {modname}: {processed_keys} Key/s copied.")
